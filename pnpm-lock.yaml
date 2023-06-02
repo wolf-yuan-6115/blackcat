@@ -4,9 +4,9 @@ devDependencies:
   commitizen:
     specifier: ^4.3.0
     version: 4.3.0
-  cz-conventional-changelog:
-    specifier: ^3.3.0
-    version: 3.3.0
+  cz-emoji-conventional:
+    specifier: ^1.0.1
+    version: 1.0.1
   eslint:
     specifier: ^8.41.0
     version: 8.41.0
@@ -570,6 +570,17 @@ packages:
       word-wrap: 1.2.3
     optionalDependencies:
       '@commitlint/load': 17.5.0
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+    dev: true
+
+  /cz-emoji-conventional@1.0.1:
+    resolution: {integrity: sha512-jY+jmmbQ9n671gLWSSI34a7efDz1YPfzM3QZC5T+r8CJCCo1/myW8Ik09NV9KQ5hVSc2BBfvcq7e5IsBOZjyjg==}
+    dependencies:
+      chalk: 4.1.2
+      commitizen: 4.3.0
+      word-wrap: 1.2.3
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'

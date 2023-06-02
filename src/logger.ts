@@ -33,9 +33,9 @@ export function info(message: string, sender: string): void {
   console.log(
     getDateString() +
       " " +
-      chalk.green(sender ?? "未知") +
+      chalk.green(sender ?? "unknown") +
       " " +
-      chalk.blue("資訊") +
+      chalk.blue("info ") +
       " " +
       message,
   );
@@ -45,9 +45,9 @@ export function warn(message: string, sender: string): void {
   console.log(
     getDateString() +
       " " +
-      chalk.green(sender ?? "未知") +
+      chalk.green(sender ?? "Unknown") +
       " " +
-      chalk.yellowBright("警告") +
+      chalk.yellowBright("warn ") +
       " " +
       message,
   );
@@ -61,9 +61,9 @@ export function error(
   console.error(
     getDateString() +
       " " +
-      chalk.green(sender ?? "未知") +
+      chalk.green(sender ?? "unknown") +
       " " +
-      chalk.red("錯誤") +
+      chalk.red("error") +
       " " +
       message,
   );
@@ -72,7 +72,7 @@ export function error(
   if (spilted) {
     for (const line of spilted) {
       prefixed.push(
-        getDateString() + " " + chalk.yellow("偵錯") + " " + line,
+        getDateString() + " " + chalk.yellow("debug") + " " + line,
       );
     }
     console.error(prefixed.join("\n"));

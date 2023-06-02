@@ -1,0 +1,24 @@
+{
+  "name": "blackcat",
+  "version": "6.0.0",
+  "description": "Black cat Typescipr rewrite version. WIP!",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --fix --max-warnings=0",
+    "format": "prettier . --write",
+    "prepare": "husky install"
+  },
+  "keywords": [],
+  "author": "Wolf yuan <wolfyuan@proton.me>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "eslint": "^8.41.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "prettier": "^2.8.8"
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix",
+    "*.--write": "prettier --write"
+  }
+}

@@ -11,14 +11,21 @@
   "keywords": [],
   "author": "Wolf yuan <wolfyuan@proton.me>",
   "license": "Apache-2.0",
+  "lint-staged": {
+    "*.{js,ts}": "npm run lint",
+    "*.{js,css,md,html,json}": "npm run format"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
   "devDependencies": {
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.41.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "prettier": "^2.8.8"
-  },
-  "lint-staged": {
-    "*.js": "eslint --cache --fix",
-    "*.--write": "prettier --write"
   }
 }

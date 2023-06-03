@@ -78,3 +78,9 @@ export function error(
     console.error(prefixed.join("\n"));
   }
 }
+
+export default {
+  info,
+  warn,
+  error,
+};

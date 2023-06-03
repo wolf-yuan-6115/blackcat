@@ -56,7 +56,7 @@ export function warn(message: string, sender: string): void {
 export function error(
   message: string,
   sender: string,
-  error: Error,
+  error: Error | void,
 ): void {
   console.error(
     getDateString() +
@@ -67,8 +67,8 @@ export function error(
       " " +
       message,
   );
-  const spilted = error.stack?.split("\n");
-  const prefixed = [];
+  const spilted: string[] | undefined = error?.stack?.split("\n");
+  const prefixed: string[] = [];
   if (spilted) {
     for (const line of spilted) {
       prefixed.push(

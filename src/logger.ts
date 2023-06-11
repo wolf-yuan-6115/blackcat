@@ -79,8 +79,13 @@ export function error(
   }
 }
 
+export function debug(message: string): void {
+  console.log(chalk.dim(message));
+}
+
 export default {
   info,
   warn,
   error,
+  debug,
 };

@@ -14,11 +14,11 @@ const client = new Discord.Client({
     repliedUser: false,
   },
   presence: {
-    status: "idle",
+    status: "dnd",
     activities: [
       {
         name: "Loading",
-        type: Discord.ActivityType.Watching,
+        type: Discord.ActivityType.Playing,
       },
     ],
   },
@@ -53,10 +53,12 @@ eventFiles.forEach(async (location: string) => {
     .default;
 
   if (event.once) {
-    client.once(event.event, (...args) => {
-      event.run(client, ...args);
-    });
+    client.once(event.event, (...args: unknown[]) =>
+      event.run(client, clientData, [...args]),
+    );
   } else {
-    client.on(event.event, (...args) => event.run(client, ...args));
+    client.on(event.event, (...args: unknown[]) =>
+      event.run(client, clientData, [...args]),
+    );
   }
 });

@@ -28,6 +28,8 @@ export default {
           value: `Discord.js version: v${version} Node.js: ${process.version}`,
         },
       ]);
-    console.log(embed);
+    interaction.reply({
+      embeds: [embed],
+    });
   },
 } satisfies BotCommand;

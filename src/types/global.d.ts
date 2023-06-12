@@ -1,11 +1,11 @@
 import type { ClusterClient } from "discord-hybrid-sharding";
 import type {
   Collection,
-  SlashCommandBuilder,
   Snowflake,
   ChatInputCommandInteraction,
   ClientEvents,
   Client,
+  SlashCommandBuilder,
 } from "discord.js";
 
 export {};
@@ -21,7 +21,7 @@ declare global {
   interface ClientData {
     config: Config;
     cluster: ClusterClient;
-    commands: Collection<string, Command>;
+    commands: Collection<string, BotCommand>;
     players: Collection<Snowflake, Player>;
   }
 
@@ -36,6 +36,10 @@ declare global {
   interface BotEvent {
     event: keyof ClientEvents;
     once: boolean;
-    run(client: Client, ...args: unknown[]): void;
+    run(
+      client: Client,
+      clientData: ClientData,
+      ...args: unknown[]
+    ): void;
   }
 }

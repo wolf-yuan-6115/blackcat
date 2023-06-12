@@ -56,7 +56,7 @@ export function warn(message: string, sender: string): void {
 export function error(
   message: string,
   sender: string,
-  error: Error | void,
+  error?: Error,
 ): void {
   console.error(
     getDateString() +

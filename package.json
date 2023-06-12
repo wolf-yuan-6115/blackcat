@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node out/index.js",
     "prepare": "husky install",
-    "postinstall": ""
+    "postinstall": "tsc"
   },
   "keywords": [],
   "author": "Wolf yuan <wolfyuan@proton.me>",

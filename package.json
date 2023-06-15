@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node out/index.js",
+    "start": "tsc && node out/index.js",
     "prepare": "husky install",
     "postinstall": "tsc"
   },

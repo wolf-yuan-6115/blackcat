@@ -62,3 +62,5 @@ eventFiles.forEach(async (location: string) => {
     );
   }
 });
+
+client.login(clientData.config.token);

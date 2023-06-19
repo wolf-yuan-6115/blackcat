@@ -2,7 +2,7 @@ import Discord from "discord.js";
 import fs from "node:fs";
 import { ClusterClient, getInfo } from "discord-hybrid-sharding";
 import configGrabber from "./utils/configGrabber.js";
-import logger from "./logger.js";
+import logger from "./utils/logger.js";
 
 const client = new Discord.Client({
   intents: [

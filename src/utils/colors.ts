@@ -1,5 +1,5 @@
 export default {
-  danger: "#EF4444",
-  warning: "#EAB308",
-  success: "#57F287",
+  danger: 0xef4444,
+  warning: 0xeab308,
+  success: 0x57f287,
 } satisfies Colors;

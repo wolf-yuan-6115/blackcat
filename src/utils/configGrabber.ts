@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { error } from "../logger.js";
+import { error } from "./logger.js";
 
 export default function (): Config {
   let parsed: Config = {

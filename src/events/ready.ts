@@ -1,4 +1,4 @@
-import logger from "../logger.js";
+import logger from "../utils/logger.js";
 import { ActivityType } from "discord.js";
 
 export default {

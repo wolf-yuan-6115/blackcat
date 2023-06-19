@@ -6,6 +6,7 @@ import type {
   ClientEvents,
   Client,
   SlashCommandBuilder,
+  ColorResolvable,
 } from "discord.js";
 
 export {};
@@ -16,6 +17,12 @@ declare global {
     cookie: string;
     optimize: boolean;
     debug: undefined | boolean;
+  }
+
+  interface Colors {
+    danger: ColorResolvable;
+    warning: ColorResolvable;
+    success: ColorResolvable;
   }
 
   interface ClientData {

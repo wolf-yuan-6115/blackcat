@@ -7,6 +7,7 @@ import type {
   Client,
   SlashCommandBuilder,
   ColorResolvable,
+  User,
 } from "discord.js";
 
 export {};
@@ -48,5 +49,23 @@ declare global {
       clientData: ClientData,
       ...args: unknown[]
     ): void;
+  }
+
+  interface SongInfo {
+    name: string;
+    url: string;
+    duration: number;
+    queuedBy: User;
+  }
+
+  enum RepeatState {
+    Off,
+    Single,
+    All,
+  }
+
+  interface EffectState {
+    Bassboost: boolean;
+    Nightcore: boolean;
   }
 }

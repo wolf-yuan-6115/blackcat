@@ -217,7 +217,7 @@ export default class Player {
         VoiceConnectionStatus.Ready,
         15_000,
       );
-    } catch (_error: never) {
+    } catch (_error: any) {
       return;
     }
     try {

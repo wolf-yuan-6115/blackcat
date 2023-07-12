@@ -54,11 +54,11 @@ eventFiles.forEach(async (location: string) => {
 
   if (event.once) {
     client.once(event.event, (...args: unknown[]) =>
-      event.run(client, clientData, [...args]),
+      event.run(client, clientData, ...args),
     );
   } else {
     client.on(event.event, (...args: unknown[]) =>
-      event.run(client, clientData, [...args]),
+      event.run(client, clientData, ...args),
     );
   }
 });

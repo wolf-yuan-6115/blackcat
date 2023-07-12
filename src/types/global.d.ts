@@ -10,7 +10,11 @@ import type {
   User,
 } from "discord.js";
 
-export {};
+export enum RepeatState {
+  Off,
+  Single,
+  All,
+}
 
 declare global {
   interface Config {
@@ -52,16 +56,11 @@ declare global {
   }
 
   interface SongInfo {
-    name: string;
+    name: string | undefined;
     url: string;
     duration: number;
     queuedBy: User;
-  }
-
-  enum RepeatState {
-    Off,
-    Single,
-    All,
+    thumbnail: string | undefined;
   }
 
   interface EffectState {

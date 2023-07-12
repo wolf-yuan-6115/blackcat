@@ -1,3 +1,7 @@
-# blackcat
+<h1 aligh="center">Black cat</h1>
 
-Black cat Typescript rewrite version. WIP!
+Discord music bot written in TypeScript
+
+> Please note that this version is still under development!
+
+

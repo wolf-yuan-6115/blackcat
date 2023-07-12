@@ -35,7 +35,7 @@ export function info(message: string, sender: string): void {
       " " +
       chalk.green(sender ?? "unknown") +
       " " +
-      chalk.blue("info ") +
+      chalk.blue("info") +
       " " +
       message,
   );
@@ -47,7 +47,7 @@ export function warn(message: string, sender: string): void {
       " " +
       chalk.green(sender ?? "Unknown") +
       " " +
-      chalk.yellowBright("warn ") +
+      chalk.yellowBright("warn") +
       " " +
       message,
   );

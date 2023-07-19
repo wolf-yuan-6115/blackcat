@@ -28,7 +28,7 @@ export default {
       status: "online",
       activities: [
         {
-          name: "/help | Bot ready!",
+          name: "/help | Black cat OSS",
           type: ActivityType.Playing,
         },
       ],
@@ -40,11 +40,11 @@ export default {
         status: "online",
         activities: [
           {
-            name: "/help",
+            name: "/help | Black cat OSS",
             type: ActivityType.Playing,
           },
         ],
       });
     }, 15_000);
   },
-} satisfies BotEvent;
+} satisfies BotEvent<"ready">;

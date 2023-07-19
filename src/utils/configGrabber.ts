@@ -7,6 +7,7 @@ export default function (): Config {
     cookie: "",
     optimize: false,
     debug: undefined,
+    driver: "native",
   };
   if (!existsSync("./config.json")) return parsed;
 

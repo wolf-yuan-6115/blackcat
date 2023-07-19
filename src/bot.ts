@@ -40,8 +40,7 @@ const commandFiles: string[] = fs
   .readdirSync("./out/commands")
   .filter((file) => file.endsWith(".js"));
 commandFiles.forEach(async (location: string) => {
-  const command: BotCommand = (await import(`./commands/${location}`))
-    .default;
+  const command = (await import(`./commands/${location}`)).default;
   clientData.commands.set(command.data.name, command);
 });
 
@@ -49,8 +48,7 @@ const eventFiles: string[] = fs
   .readdirSync("./out/events")
   .filter((file) => file.endsWith(".js"));
 eventFiles.forEach(async (location: string) => {
-  const event: BotEvent = (await import(`./events/${location}`))
-    .default;
+  const event = (await import(`./events/${location}`)).default;
 
   if (event.once) {
     client.once(event.event, (...args: unknown[]) =>

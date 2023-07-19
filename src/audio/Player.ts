@@ -66,16 +66,15 @@ export default class Player {
 
   _init: boolean;
   _songs: SongInfo[];
+  _playing: boolean;
   _paused: boolean;
   _muted: boolean;
   _repeat: RepeatState;
   _volume: number;
   _effects: EffectState;
 
-  _deleted: boolean;
-
   _youtubeStream: YouTubeStream | SoundCloudStream;
-  _audioResource: AudioResource;
+  _audioResource: AudioResource<SongInfo>;
 
   constructor(
     clientData: ClientData,
@@ -106,6 +105,7 @@ export default class Player {
 
     this._init = false;
     this._songs = [];
+    this._playing = false;
     this._paused = false;
     this._muted = false;
     this._repeat = RepeatState.Off;
@@ -119,8 +119,6 @@ export default class Player {
       Bassboost: false,
       Nightcore: false,
     };
-
-    this._deleted = false;
 
     // @ts-ignore
     this._youtubeStream = null;
@@ -138,7 +136,7 @@ export default class Player {
 
   private _handelYoutubeErr(
     error: any,
-    interaction: ChatInputCommandInteraction,
+    interaction: ChatInputCommandInteraction | undefined,
   ) {
     const errorEmbed: EmbedBuilder = new EmbedBuilder().setColor(
       colors.danger,
@@ -159,7 +157,9 @@ export default class Player {
       errorEmbed.setTitle("😱 Something went wrong!");
     }
     logger.error(error.message, "player", error);
-    this._reply(interaction, { embeds: [errorEmbed] });
+    if (interaction)
+      this._reply(interaction, { embeds: [errorEmbed] });
+    else this._textChannel?.send({ embeds: [errorEmbed] });
   }
 
   private _reply(
@@ -189,7 +189,7 @@ export default class Player {
         )
         .setDescription("```" + error.message + "```");
       this._textChannel
-        .send({ embeds: [joinVCEmbed] })
+        ?.send({ embeds: [joinVCEmbed] })
         .catch(this._ignore);
     }
 
@@ -243,7 +243,7 @@ export default class Player {
               "Looks like you've disconnected me from Voice Channel.",
             );
           this._textChannel
-            .send({
+            ?.send({
               embeds: [leftEmbed],
             })
             .catch(this._ignore);
@@ -253,22 +253,25 @@ export default class Player {
 
     this._audioPlayer.on(AudioPlayerStatus.Playing, () =>
       logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel}`,
-        "playing",
-      ),
-    );
-    this._audioPlayer.on(AudioPlayerStatus.Idle, () =>
-      logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel}`,
+        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
         "playing",
       ),
     );
     this._audioPlayer.on(AudioPlayerStatus.Buffering, () =>
       logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel}`,
+        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
         "buffering",
       ),
     );
+    this._audioPlayer.on(AudioPlayerStatus.Idle, () => {
+      logger.info(
+        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
+        "idle",
+      );
+
+      this._songs.shift();
+      this.startStream(0);
+    });
 
     this._init = true;
     this._clientData.players.set(this._guildId, this);
@@ -298,7 +301,7 @@ export default class Player {
           "You might need to set me as the stage speaker manually.",
         );
       this._textChannel
-        .send({ embeds: [stageEmbed] })
+        ?.send({ embeds: [stageEmbed] })
         .catch(this._ignore);
     }
   }
@@ -308,7 +311,7 @@ export default class Player {
       .setTitle("🔍 Looking for music")
       .setDescription(`Searching ${song}`)
       .setColor(colors.success);
-    this._reply(interaction, { embeds: [initEmbed] });
+    await this._reply(interaction, { embeds: [initEmbed] });
 
     if (checkIsUrl(song)) {
       const url = new URL(song);
@@ -334,6 +337,16 @@ export default class Player {
     }
   }
 
+  skip(interaction: ChatInputCommandInteraction) {
+    const skipPersonalEmbed = new EmbedBuilder()
+      .setTitle("⏭️ Skipping current song")
+      .setColor(colors.success);
+    this._reply(interaction, {
+      embeds: [skipPersonalEmbed],
+      ephemeral: true,
+    });
+  }
+
   private async loadSearch(
     query: string,
     interaction: ChatInputCommandInteraction,
@@ -351,12 +364,13 @@ export default class Player {
           .setColor(colors.danger);
         interaction;
         this._reply(interaction, { embeds: [noVidEmbed] });
+        return;
       }
 
       const video = await video_info(result[0].url);
       song = this.parseData(video.video_details, interaction.user);
       this._songs.push(song);
-      this.startStream(interaction);
+      this.startStream(1, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -407,6 +421,8 @@ export default class Player {
         this._reply(interaction, { embeds: [ignoredEmbed] });
       }
 
+      collected?.deferUpdate().catch(this._ignore);
+      replied.delete().catch(this._ignore);
       if (collected?.customId === "v") {
         this.loadVideo(vid, interaction);
       } else {
@@ -424,7 +440,7 @@ export default class Player {
       const video = await video_info(id);
       song = this.parseData(video.video_details, interaction.user);
       this._songs.push(song);
-      this.startStream(interaction);
+      this.startStream(1, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -434,14 +450,14 @@ export default class Player {
     id: string,
     interaction: ChatInputCommandInteraction,
   ) {
-    let songs: SongInfo[];
+    const songs: SongInfo[] = [];
     try {
       const playlist = await playlist_info(id);
       const videos = await playlist.all_videos();
       videos.forEach((i) => {
         songs.push(this.parseData(i, interaction.user));
       });
-      this.startStream(interaction);
+      this.startStream(videos.length, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -458,18 +474,43 @@ export default class Player {
   }
 
   private async startStream(
-    interaction: ChatInputCommandInteraction,
+    addedCount: number,
+    interaction?: ChatInputCommandInteraction,
   ) {
+    // No audio is playing currently
+    if (this._playing && addedCount !== 0) {
+      const addedEmbed = new EmbedBuilder()
+        .setTitle("✅ Added to queue")
+        .setColor(colors.success);
+
+      if (addedCount === 1) {
+        addedEmbed.setDescription(
+          `Added \`${
+            this._songs[this._songs.length - 1].name
+          }\` to queue`,
+        );
+      } else {
+        addedEmbed.setDescription(
+          `Added \`${addedCount}\` songs to queue`,
+        );
+      }
+      // Ignore if there is no interaction as its not possible
+      if (interaction)
+        this._reply(interaction, { embeds: [addedEmbed] });
+      return;
+    }
     const readyEmbed = new EmbedBuilder()
       .setTitle("🔍 Getting ready to play song...")
       .setDescription(
-        `Song name: ${this._songs[0].name ?? "unknown track"}`,
+        `Song name: \`${this._songs[0].name ?? "unknown track"}\``,
       )
       .setColor(colors.warning);
 
-    const followedUp = await this._reply(interaction, {
-      embeds: [readyEmbed],
-    });
+    const followedUp = interaction
+      ? await this._reply(interaction, {
+          embeds: [readyEmbed],
+        })
+      : await this._textChannel.send({ embeds: [readyEmbed] });
 
     try {
       this._youtubeStream = await getStream(this._songs[0].url);
@@ -479,7 +520,7 @@ export default class Player {
       return;
     }
 
-    this._audioResource = createAudioResource(
+    this._audioResource = createAudioResource<SongInfo>(
       this._youtubeStream.stream,
       {
         inputType: this._youtubeStream.type,
@@ -487,5 +528,14 @@ export default class Player {
       },
     );
     this._audioPlayer.play(this._audioResource);
+    this._playing = true;
+
+    readyEmbed
+      .setTitle("🎵 Started playing")
+      .setDescription(
+        `Now playing: \`${this._audioResource.metadata.name}\``,
+      );
+    if (followedUp)
+      followedUp.edit({ embeds: [readyEmbed] }).catch(this._ignore);
   }
 }

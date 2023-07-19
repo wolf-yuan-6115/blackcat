@@ -22,6 +22,7 @@ declare global {
     cookie: string;
     optimize: boolean;
     debug: undefined | boolean;
+    driver: "native" | "lavalink";
   }
 
   interface Colors {
@@ -45,13 +46,13 @@ declare global {
     ): void;
   }
 
-  interface BotEvent {
+  interface BotEvent<T extends keyof ClientEvents> {
     event: keyof ClientEvents;
     once: boolean;
     run(
       client: Client,
       clientData: ClientData,
-      ...args: unknown[]
+      ...args: ClientEvents[T]
     ): void;
   }
 
@@ -66,5 +67,10 @@ declare global {
   interface EffectState {
     Bassboost: boolean;
     Nightcore: boolean;
+  }
+
+  interface Driver {
+    name: string;
+    ready(clientData: ClientData);
   }
 }

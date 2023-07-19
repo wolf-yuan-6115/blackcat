@@ -1,10 +1,10 @@
-import { EmbedBuilder, type Interaction } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 import logger from "../utils/logger.js";
 
 export default {
   event: "interactionCreate",
   once: false,
-  run: (client, clientData: ClientData, interaction: Interaction) => {
+  run: (client, clientData: ClientData, interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     if (!interaction.guild)
@@ -44,4 +44,4 @@ export default {
       logger.error(error.message, "commandHandeler", error);
     }
   },
-} satisfies BotEvent;
+} satisfies BotEvent<"interactionCreate">;

@@ -64,11 +64,6 @@ declare global {
     thumbnail: string | undefined;
   }
 
-  interface EffectState {
-    Bassboost: boolean;
-    Nightcore: boolean;
-  }
-
   interface Driver {
     name: string;
     ready(clientData: ClientData);

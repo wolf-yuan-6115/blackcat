@@ -13,7 +13,7 @@ if (!config.token) {
   process.exit(255);
 }
 
-const manager: ClusterManager = new ClusterManager("./out/bot.js", {
+const manager: ClusterManager = new ClusterManager("./dist/bot.js", {
   totalShards: "auto",
   shardsPerClusters: 2,
   mode: "process",

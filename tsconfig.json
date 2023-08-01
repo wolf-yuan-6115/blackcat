@@ -3,7 +3,7 @@
     "./src/**/*"
   ],
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ESNext",
     "lib": [
       "ES2022",
       "DOM"
@@ -14,7 +14,7 @@
       "./node_modules/@types/",
       "./src/types/"
     ],
-    "outDir": "./out",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,

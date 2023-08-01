@@ -7,9 +7,11 @@ import {
   type User,
   type Guild,
   type ChatInputCommandInteraction,
+  type ButtonInteraction,
   type Snowflake,
   type Message,
   type MessagePayload,
+  type InteractionResponse,
   type InteractionReplyOptions,
   StageChannel,
   GuildMember,
@@ -44,11 +46,18 @@ import {
 import colors from "../utils/colors.js";
 import checkIsUrl from "../utils/checkIsUrl.js";
 import logger from "../utils/logger.js";
+import secondsToDuration from "../utils/duration.js";
+import createProgressBar from "../utils/progressBar.js";
 
-enum RepeatState {
+export enum RepeatState {
   Off,
   Single,
   All,
+}
+
+export interface EffectState {
+  Bassboost: boolean;
+  Nightcore: boolean;
 }
 
 export default class Player {
@@ -61,11 +70,12 @@ export default class Player {
   _voiceChannelId: Snowflake;
   _audioPlayer: AudioPlayer;
   _connection: VoiceConnection;
-  _controller: Message | null;
+  _controller: Message | InteractionResponse | null;
   _disableEffect: boolean;
 
   _init: boolean;
   _songs: SongInfo[];
+  _playedSong: SongInfo[];
   _playing: boolean;
   _paused: boolean;
   _muted: boolean;
@@ -105,6 +115,7 @@ export default class Player {
 
     this._init = false;
     this._songs = [];
+    this._playedSong = [];
     this._playing = false;
     this._paused = false;
     this._muted = false;
@@ -125,7 +136,6 @@ export default class Player {
     // @ts-ignore
     this._audioResource = null;
 
-    // Set youtube cookie if presents
     if (clientData.config.cookie) {
       setToken({ youtube: { cookie: clientData.config.cookie } });
     }
@@ -163,7 +173,7 @@ export default class Player {
   }
 
   private _reply(
-    interaction: ChatInputCommandInteraction,
+    interaction: ChatInputCommandInteraction | ButtonInteraction,
     payload: string | MessagePayload | InteractionReplyOptions,
   ) {
     if (interaction.replied)
@@ -269,7 +279,6 @@ export default class Player {
         "idle",
       );
 
-      this._songs.shift();
       this.startStream(0);
     });
 
@@ -337,7 +346,37 @@ export default class Player {
     }
   }
 
-  skip(interaction: ChatInputCommandInteraction) {
+  previous(
+    interaction: ChatInputCommandInteraction | ButtonInteraction,
+  ) {
+    const skipPersonalEmbed = new EmbedBuilder()
+      .setTitle("⏭️ Playing previous song")
+      .setColor(colors.success);
+    this._reply(interaction, {
+      embeds: [skipPersonalEmbed],
+      ephemeral: true,
+    });
+
+    const previousEmbed = new EmbedBuilder()
+      .setTitle("⏭️ Playing previous song")
+      .setDescription(
+        `User \`${interaction.user.username}\` played previous song \`${this._audioResource.metadata.name}\``,
+      )
+      .setColor(colors.success)
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() ?? undefined,
+      });
+    this._textChannel
+      ?.send({
+        embeds: [previousEmbed],
+      })
+      .catch(this._ignore);
+
+    this.startStream(0);
+  }
+
+  skip(interaction: ChatInputCommandInteraction | ButtonInteraction) {
     const skipPersonalEmbed = new EmbedBuilder()
       .setTitle("⏭️ Skipping current song")
       .setColor(colors.success);
@@ -345,6 +384,120 @@ export default class Player {
       embeds: [skipPersonalEmbed],
       ephemeral: true,
     });
+
+    const skippedEmbed = new EmbedBuilder()
+      .setTitle("⏭️ Song skipped")
+      .setDescription(
+        `Skipped current song \`${this._audioResource.metadata.name}\``,
+      )
+      .setColor(colors.success)
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() ?? undefined,
+      });
+    this._textChannel
+      ?.send({
+        embeds: [skippedEmbed],
+      })
+      .catch(this._ignore);
+
+    this.startStream(0);
+  }
+
+  repeat(
+    interaction: ChatInputCommandInteraction | ButtonInteraction,
+    repeatState: RepeatState,
+  ) {
+    let humanState;
+    switch (repeatState) {
+      case RepeatState.All:
+        humanState = "`All`";
+        break;
+      case RepeatState.Single:
+        humanState = "`Single`";
+        break;
+      case RepeatState.Off:
+        humanState = "Turned off";
+        break;
+    }
+
+    const repeatPersonalEmbed = new EmbedBuilder()
+      .setTitle("🔁 Changed repeat mode")
+      .setDescription(`Current repeat mode: ${humanState}`)
+      .setColor(colors.success);
+    this._reply(interaction, {
+      embeds: [repeatPersonalEmbed],
+      ephemeral: true,
+    });
+
+    const repeatEmbed = new EmbedBuilder()
+      .setTitle("🔁 Current repeat mode changed")
+      .setDescription(`Current repeat mode: ${humanState}`)
+      .setColor(colors.success)
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() ?? undefined,
+      });
+    this._textChannel
+      ?.send({
+        embeds: [repeatEmbed],
+      })
+      .catch(this._ignore);
+    this._repeat = repeatState;
+  }
+
+  pause(
+    interaction: ChatInputCommandInteraction | ButtonInteraction,
+  ) {
+    const pausePersonalEmbed = new EmbedBuilder()
+      .setTitle("⏸️ Paused corrent song")
+      .setColor(colors.success);
+    this._reply(interaction, {
+      embeds: [pausePersonalEmbed],
+      ephemeral: true,
+    });
+
+    const pauseEmbed = new EmbedBuilder()
+      .setTitle("⏸️ Paused corrent song")
+      .setColor(colors.success)
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() ?? undefined,
+      });
+    this._textChannel
+      ?.send({
+        embeds: [pauseEmbed],
+      })
+      .catch(this._ignore);
+    this._paused = true;
+    this._audioPlayer.pause(true);
+  }
+
+  resume(
+    interaction: ChatInputCommandInteraction | ButtonInteraction,
+  ) {
+    const resumePersonalEmbed = new EmbedBuilder()
+      .setTitle("▶️ Resume corrent song")
+      .setColor(colors.success);
+    this._reply(interaction, {
+      embeds: [resumePersonalEmbed],
+      ephemeral: true,
+    });
+
+    const resumeEmbed = new EmbedBuilder()
+      .setTitle("▶️ Resume corrent song")
+      .setColor(colors.success)
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() ?? undefined,
+      });
+    this._textChannel
+      ?.send({
+        embeds: [resumeEmbed],
+      })
+      .catch(this._ignore);
+    this._paused = false;
+    this._audioPlayer.unpause();
   }
 
   private async loadSearch(
@@ -478,6 +631,8 @@ export default class Player {
     interaction?: ChatInputCommandInteraction,
   ) {
     // No audio is playing currently
+    console.log(this._playing);
+    console.trace();
     if (this._playing && addedCount !== 0) {
       const addedEmbed = new EmbedBuilder()
         .setTitle("✅ Added to queue")
@@ -529,13 +684,131 @@ export default class Player {
     );
     this._audioPlayer.play(this._audioResource);
     this._playing = true;
+    const current = this._songs.shift();
+    if (current) {
+      if (this._repeat === RepeatState.All) {
+        this._songs.push(current);
+      } else if (this._repeat === RepeatState.Single) {
+        const firstSong = [current];
+        this._songs = firstSong.concat(this._songs);
+      }
+    }
 
-    readyEmbed
-      .setTitle("🎵 Started playing")
+    if (followedUp) this.refreshController(followedUp);
+  }
+
+  private refreshController(
+    bootstrap: Message | InteractionResponse,
+  ) {
+    if (bootstrap) {
+      this._controller = bootstrap;
+    }
+
+    let repeatName = "",
+      effectName = "";
+    switch (this._repeat) {
+      case RepeatState.Off:
+        repeatName = "Off";
+        break;
+      case RepeatState.All:
+        repeatName = "All";
+        break;
+      case RepeatState.Single:
+        repeatName = "Single";
+        break;
+    }
+    if (this._effects.Bassboost)
+      effectName = effectName + "Bassboost ";
+    if (this._effects.Nightcore)
+      effectName = effectName + "Nightcore ";
+
+    const controlEmbed = new EmbedBuilder()
+      .setTitle("🎶 Start playing music")
       .setDescription(
-        `Now playing: \`${this._audioResource.metadata.name}\``,
+        `**${
+          this._audioResource.metadata.name || "Unknown Track"
+        }**\n` +
+          `[${secondsToDuration(
+            this._audioResource.playbackDuration / 1000,
+          )}] ` +
+          `${createProgressBar(
+            Math.round(this._audioResource.playbackDuration / 1000),
+            this._audioResource.metadata.duration,
+          )} ` +
+          `[${secondsToDuration(
+            this._audioResource.metadata.duration,
+          )}]`,
+      )
+      .addFields(
+        {
+          name: "🖊️ Requester",
+          value: this._audioResource.metadata.queuedBy.username,
+          inline: true,
+        },
+        {
+          name: "🎛️ Audio Effects",
+          value: effectName.trim() || "None",
+          inline: true,
+        },
+        {
+          name: "🔁 Repeat mode",
+          value: repeatName,
+          inline: true,
+        },
+      )
+      .setColor("Blurple");
+    const previousButton = new ButtonBuilder()
+      .setCustomId("back")
+      .setEmoji("⏮️")
+      .setStyle(ButtonStyle.Secondary);
+    const playPauseButton = new ButtonBuilder()
+      .setCustomId("play")
+      .setEmoji("⏯️")
+      .setStyle(ButtonStyle.Primary);
+    const nextButton = new ButtonBuilder()
+      .setCustomId("next")
+      .setEmoji("⏭️")
+      .setStyle(ButtonStyle.Secondary);
+    const buttons =
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        previousButton,
+        playPauseButton,
+        nextButton,
       );
-    if (followedUp)
-      followedUp.edit({ embeds: [readyEmbed] }).catch(this._ignore);
+
+    bootstrap
+      .edit({
+        embeds: [controlEmbed],
+        components: [buttons],
+      })
+      .then((message) => {
+        message
+          .createMessageComponentCollector({
+            componentType: ComponentType.Button,
+          })
+          .on("collect", (i) => this.buttonHandle(i));
+      })
+      .catch(this._ignore);
+  }
+
+  private buttonHandle(interaction: ButtonInteraction) {
+    switch (interaction.customId) {
+      case "back":
+        this.previous(interaction);
+        break;
+      case "play":
+        if (this._paused) {
+          this.resume(interaction);
+        } else {
+          this.pause(interaction);
+        }
+        break;
+      case "next":
+        this.skip(interaction);
+        break;
+
+      default:
+        break;
+    }
   }
 }

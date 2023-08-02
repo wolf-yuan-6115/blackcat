@@ -4,6 +4,9 @@
   "description": "Black cat Typescipr rewrite version. WIP!",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">= 18"
+  },
   "scripts": {
     "start": "tsc && node dist/index.js",
     "prepare": "husky install",

@@ -631,8 +631,6 @@ export default class Player {
     interaction?: ChatInputCommandInteraction,
   ) {
     // No audio is playing currently
-    console.log(this._playing);
-    console.trace();
     if (this._playing && addedCount !== 0) {
       const addedEmbed = new EmbedBuilder()
         .setTitle("✅ Added to queue")

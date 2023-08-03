@@ -3,7 +3,7 @@
     "./src/**/*"
   ],
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES6",
     "lib": [
       "ES2022",
       "DOM"

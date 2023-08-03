@@ -328,19 +328,11 @@ export default class Player {
 
       if (params.has("list")) {
         if (params.has("v"))
-          return this.loadPlaylistWithVideo(
-            // @ts-expect-error
-            params.get("v"),
-            params.get("list"),
-            interaction,
-          );
-        /*@ts-expect-error*/ else
-          return this.loadPlaylist(params.get("list"), interaction);
+          return this.loadPlaylistWithVideo(song, interaction);
+        else return this.loadPlaylist(song, interaction);
       }
 
-      if (params.get("v"))
-        // @ts-expect-error
-        return this.loadVideo(params.get("V"), interaction);
+      if (params.get("v")) return this.loadVideo(song, interaction);
     } else {
       return this.loadSearch(song, interaction);
     }
@@ -373,6 +365,7 @@ export default class Player {
       })
       .catch(this._ignore);
 
+    this._songs.push(this._playedSong[0]);
     this.startStream(0);
   }
 
@@ -530,8 +523,7 @@ export default class Player {
   }
 
   private async loadPlaylistWithVideo(
-    vid: string,
-    pid: string,
+    url: string,
     interaction: ChatInputCommandInteraction,
   ) {
     const chooseEmbed = new EmbedBuilder()
@@ -577,9 +569,11 @@ export default class Player {
       collected?.deferUpdate().catch(this._ignore);
       replied.delete().catch(this._ignore);
       if (collected?.customId === "v") {
-        this.loadVideo(vid, interaction);
+        this.loadVideo(url, interaction);
       } else {
-        this.loadPlaylist(pid, interaction);
+        const params = new URL(url).searchParams;
+        //@ts-expect-error
+        this.loadPlaylist(params.get("list"), interaction);
       }
     }
   }
@@ -603,12 +597,11 @@ export default class Player {
     id: string,
     interaction: ChatInputCommandInteraction,
   ) {
-    const songs: SongInfo[] = [];
     try {
       const playlist = await playlist_info(id);
       const videos = await playlist.all_videos();
       videos.forEach((i) => {
-        songs.push(this.parseData(i, interaction.user));
+        this._songs.push(this.parseData(i, interaction.user));
       });
       this.startStream(videos.length, interaction);
     } catch (error: any) {

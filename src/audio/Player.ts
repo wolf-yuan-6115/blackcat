@@ -689,6 +689,11 @@ export default class Player {
       } else if (this._repeat === RepeatState.Single) {
         const firstSong = [current];
         this._songs = firstSong.concat(this._songs);
+      } else {
+        this._playedSong.push(current);
+        if (this._playedSong.length > 10) {
+          this._playedSong.pop();
+        }
       }
     }
 

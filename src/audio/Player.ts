@@ -71,6 +71,7 @@ export default class Player {
   _audioPlayer: AudioPlayer;
   _connection: VoiceConnection;
   _controller: Message | InteractionResponse | null;
+  _updateInterval: ReturnType<typeof setInterval>;
   _disableEffect: boolean;
 
   _init: boolean;
@@ -126,6 +127,8 @@ export default class Player {
     // @ts-ignore
     this._connection = null;
     this._controller = null;
+    // @ts-expect-error
+    this._updateInterval = null;
     this._effects = {
       Bassboost: false,
       Nightcore: false,
@@ -690,14 +693,18 @@ export default class Player {
       }
     }
 
-    if (followedUp) this.refreshController(followedUp);
+    if (followedUp) this.refreshController(false, followedUp);
   }
 
   private refreshController(
+    recallInterval: boolean,
     bootstrap: Message | InteractionResponse,
   ) {
-    if (bootstrap) {
+    if (bootstrap && !recallInterval) {
       this._controller = bootstrap;
+    }
+    if (!recallInterval) {
+      clearInterval(this._updateInterval);
     }
 
     let repeatName = "",
@@ -765,11 +772,16 @@ export default class Player {
       .setCustomId("next")
       .setEmoji("⏭️")
       .setStyle(ButtonStyle.Secondary);
+    const stopButton = new ButtonBuilder()
+      .setCustomId("stop")
+      .setEmoji("⏹️")
+      .setStyle(ButtonStyle.Danger);
     const buttons =
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         previousButton,
         playPauseButton,
         nextButton,
+        stopButton,
       );
 
     bootstrap
@@ -778,13 +790,23 @@ export default class Player {
         components: [buttons],
       })
       .then((message) => {
-        message
-          .createMessageComponentCollector({
-            componentType: ComponentType.Button,
-          })
-          .on("collect", (i) => this.buttonHandle(i));
-      })
-      .catch(this._ignore);
+        this._controller = message;
+        if (!recallInterval) {
+          message
+            .createMessageComponentCollector({
+              componentType: ComponentType.Button,
+            })
+            .on("collect", (i) => this.buttonHandle(i));
+        }
+      });
+    //.catch(this._ignore);
+    if (this._updateInterval && !recallInterval) {
+      this._updateInterval = setInterval(() => {
+        if (this._controller) {
+          this.refreshController(true, this._controller);
+        }
+      }, 15_000);
+    }
   }
 
   private buttonHandle(interaction: ButtonInteraction) {

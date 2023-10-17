@@ -122,9 +122,9 @@ export default class Player {
     this._muted = false;
     this._repeat = RepeatState.Off;
     this._volume = 0.7;
-    // @ts-ignore
+    // @ts-expect-error
     this._audioPlayer = null;
-    // @ts-ignore
+    // @ts-expect-error
     this._connection = null;
     this._controller = null;
     // @ts-expect-error
@@ -134,9 +134,9 @@ export default class Player {
       Nightcore: false,
     };
 
-    // @ts-ignore
+    // @ts-expect-error
     this._youtubeStream = null;
-    // @ts-ignore
+    // @ts-expect-error
     this._audioResource = null;
 
     if (clientData.config.cookie) {

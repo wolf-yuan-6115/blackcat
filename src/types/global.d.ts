@@ -1,3 +1,4 @@
+import type Player from "../audio/Player.js";
 import type { ClusterClient } from "discord-hybrid-sharding";
 import type {
   Collection,

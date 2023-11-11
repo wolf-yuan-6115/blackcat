@@ -1,4 +1,3 @@
-import { RepeatState } from "../audio/Player.js";
 import colors from "../utils/colors.js";
 import {
   type ChatInputCommandInteraction,
@@ -9,19 +8,8 @@ import {
 
 export default {
   data: new SlashCommandBuilder()
-    .setName("repeat")
-    .setDescription("Change player repeat state")
-    .addStringOption((option) =>
-      option
-        .setName("state")
-        .setDescription("Repeat state")
-        .setRequired(true)
-        .addChoices(
-          { name: "All", value: "all" },
-          { name: "Single", value: "single" },
-          { name: "Off", value: "off" },
-        ),
-    ) as SlashCommandBuilder,
+    .setName("pause")
+    .setDescription("Pause current playing music"),
   run: (interaction: ChatInputCommandInteraction, clientData) => {
     if (!(interaction.member instanceof GuildMember))
       throw new Error("Not in a guild");
@@ -31,6 +19,7 @@ export default {
         .setTitle("❌ Nothing is playing now")
         .setDescription("Use `/play` to play some music")
         .setColor(colors.danger);
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       return (
         interaction
           .reply({ embeds: [noPlayerEmbed] })
@@ -52,28 +41,23 @@ export default {
           .catch(() => {});
       }
 
-      const repeatState = interaction.options.getString(
-        "state",
-        true,
+      const currentPlayer = clientData.players.get(
+        interaction.guildId ?? "",
       );
-      let parsedState: RepeatState;
-      switch (repeatState) {
-        case "all":
-          parsedState = RepeatState.All;
-          break;
-        case "single":
-          parsedState = RepeatState.Single;
-          break;
-        case "off":
-          parsedState = RepeatState.Off;
-          break;
-        default:
-          parsedState = RepeatState.Off;
-          break;
+      if (currentPlayer) {
+        if (currentPlayer.status.paused) {
+          const alreadyPauseEmbed = new EmbedBuilder()
+            .setTitle("❌ Current song is already paused")
+            .setDescription("Use `/resume` to resume current song")
+            .setColor(colors.danger);
+          interaction
+            .reply({ embeds: [alreadyPauseEmbed] })
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            .catch(() => {});
+        } else {
+          return currentPlayer.pause(interaction);
+        }
       }
-      clientData.players
-        .get(interaction.guildId ?? "")
-        ?.repeat(interaction, parsedState);
     }
   },
 } satisfies BotCommand;

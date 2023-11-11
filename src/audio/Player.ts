@@ -1,5 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import checkIsUrl from "../utils/checkIsUrl.js";
+import colors from "../utils/colors.js";
+import secondsToDuration from "../utils/duration.js";
+import logger from "../utils/logger.js";
+import createProgressBar from "../utils/progressBar.js";
+import {
+  type VoiceConnection,
+  type AudioPlayer,
+  type AudioResource,
+  NoSubscriberBehavior,
+  AudioPlayerStatus,
+  VoiceConnectionStatus,
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  entersState,
+} from "@discordjs/voice";
 import {
   type Client,
   type VoiceChannel,
@@ -22,18 +40,6 @@ import {
   ComponentType,
 } from "discord.js";
 import {
-  type VoiceConnection,
-  type AudioPlayer,
-  type AudioResource,
-  NoSubscriberBehavior,
-  AudioPlayerStatus,
-  VoiceConnectionStatus,
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  entersState,
-} from "@discordjs/voice";
-import {
   type YouTubeVideo,
   type YouTubeStream,
   type SoundCloudStream,
@@ -43,11 +49,6 @@ import {
   setToken,
   stream as getStream,
 } from "play-dl";
-import colors from "../utils/colors.js";
-import checkIsUrl from "../utils/checkIsUrl.js";
-import logger from "../utils/logger.js";
-import secondsToDuration from "../utils/duration.js";
-import createProgressBar from "../utils/progressBar.js";
 
 export enum RepeatState {
   Off,
@@ -58,6 +59,14 @@ export enum RepeatState {
 export interface EffectState {
   Bassboost: boolean;
   Nightcore: boolean;
+}
+
+export interface StatusData {
+  guildId: Snowflake;
+  playing: boolean;
+  paused: boolean;
+  repeat: RepeatState;
+  effect: EffectState;
 }
 
 export default class Player {
@@ -182,6 +191,16 @@ export default class Player {
     if (interaction.replied)
       return interaction.followUp(payload).catch(this._ignore);
     else return interaction.reply(payload).catch(this._ignore);
+  }
+
+  get status(): StatusData {
+    return {
+      guildId: this._guildId,
+      playing: this._playing,
+      paused: this._paused,
+      repeat: this._repeat,
+      effect: this._effects,
+    };
   }
 
   async init() {

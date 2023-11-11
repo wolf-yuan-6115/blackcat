@@ -39,6 +39,7 @@
     "sodium-native": "^4.0.4"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.2.1",
     "@types/node": "^20.6.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",

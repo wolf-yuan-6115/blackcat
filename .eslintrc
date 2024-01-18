@@ -15,6 +15,12 @@
   ],
   "parserOptions": {
     "ecmaVersion": 2022,
-    "sourceType": "module"
-  }
+    "sourceType": "module",
+    "project": true,
+    "tsconfigRootDir": "__dirname"
+  },
+  "root": true,
+  "ignorePatterns": [
+    "dist/**/*"
+  ]
 }

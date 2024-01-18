@@ -578,6 +578,16 @@ export default class Player {
       if (interaction) await this._reply(interaction, { embeds: [addedEmbed] });
       return;
     }
+
+    if (this._songs.length === 0) {
+      const stoppedEmbed = new EmbedBuilder()
+        .setTitle("🛑 Music queue is empty")
+        .setDescription("Playback has stopped after finishing all songs from the music queue.")
+        .setColor("Blurple");
+
+      this._textChannel.send({ embeds: [stoppedEmbed] }).catch(() => this._ignore());
+    }
+
     const readyEmbed = new EmbedBuilder()
       .setTitle("🔍 Getting ready to play song...")
       .setDescription(`Song name: \`${this._songs[0].name ?? "unknown track"}\``)
@@ -586,8 +596,8 @@ export default class Player {
     const followedUp = interaction
       ? await this._reply(interaction, {
           embeds: [readyEmbed],
-        })
-      : await this._textChannel.send({ embeds: [readyEmbed] });
+        }).catch(() => this._ignore())
+      : await this._textChannel.send({ embeds: [readyEmbed] }).catch(() => this._ignore());
 
     try {
       this._youtubeStream = await getStream(this._songs[0].url);

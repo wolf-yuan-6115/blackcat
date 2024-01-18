@@ -1,80 +1,50 @@
 import chalk from "chalk";
 
 function getDateString(): string {
-  const month =
-    (new Date().getMonth() + 1).toString().length === 1
-      ? `0${new Date().getMonth() + 1}`
-      : new Date().getMonth() + 1;
-  const date =
-    new Date().getDate().toString().length === 1
-      ? `0${new Date().getDate()}`
-      : new Date().getDate();
-  const hours =
-    new Date().getHours().toString().length === 1
-      ? `0${new Date().getHours()}`
-      : new Date().getHours();
-  const minutes =
-    new Date().getMinutes().toString().length === 1
-      ? `0${new Date().getMinutes()}`
-      : new Date().getMinutes();
-  const seconds =
-    new Date().getSeconds().toString().length === 1
-      ? `0${new Date().getSeconds()}`
-      : new Date().getSeconds();
+  const now = new Date();
+  const pad = (num: number) => num.toString().padStart(2, "0");
 
-  return (
-    chalk.dim(`${month}/${date}`) +
-    " " +
-    chalk.cyan(`${hours}:${minutes}:${seconds}`)
+  const month = pad(now.getMonth() + 1);
+  const date = pad(now.getDate());
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  const seconds = pad(now.getSeconds());
+
+  return `${chalk.dim(`${month}/${date}`)} ${chalk.cyan(`${hours}:${minutes}:${seconds}`)}`;
+}
+
+function formatString(input: string) {
+  return input + " ".repeat(Math.max(0, 25 - input.length));
+}
+
+export function info(message: string, sender = "unknown"): void {
+  console.log(
+    `${getDateString()} ${formatString(chalk.green(sender))}${chalk.blue("info")} ${message}`,
   );
 }
 
-export function info(message: string, sender: string): void {
+export function warn(message: string, sender = "unknown"): void {
   console.log(
-    getDateString() +
-      " " +
-      chalk.green(sender ?? "unknown") +
-      " " +
-      chalk.blue("info") +
-      " " +
-      message,
-  );
-}
-
-export function warn(message: string, sender: string): void {
-  console.log(
-    getDateString() +
-      " " +
-      chalk.green(sender ?? "Unknown") +
-      " " +
-      chalk.yellowBright("warn") +
-      " " +
-      message,
+    `${getDateString()} ${formatString(chalk.green(sender))}${chalk.yellowBright("warn")} ${message}`,
   );
 }
 
 export function error(
   message: string,
-  sender: string,
+  sender = "unknown",
   error?: Error,
 ): void {
   console.error(
-    getDateString() +
-      " " +
-      chalk.green(sender ?? "unknown") +
-      " " +
-      chalk.red("error") +
-      " " +
-      message,
+    `${getDateString()} ${formatString(chalk.green(sender))}${chalk.red("error")} ${message}`,
   );
-  const spilted: string[] | undefined = error?.stack?.split("\n");
-  const prefixed: string[] = [];
-  if (spilted) {
-    for (const line of spilted) {
-      prefixed.push(
-        getDateString() + " " + chalk.yellow("debug") + " " + line,
+
+  if (error?.stack) {
+    const prefixed = error.stack
+      .split("\n")
+      .map(
+        (line) =>
+          `${getDateString()} ${chalk.yellow("debug")} ${line}`,
       );
-    }
     console.error(prefixed.join("\n"));
   }
 }

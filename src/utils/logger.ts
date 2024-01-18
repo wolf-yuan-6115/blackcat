@@ -32,18 +32,18 @@ export function warn(message: string, sender = "unknown"): void {
 export function error(
   message: string,
   sender = "unknown",
-  error?: Error,
+  error?: unknown,
 ): void {
   console.error(
     `${getDateString()} ${formatString(chalk.green(sender))}${chalk.red("error")} ${message}`,
   );
 
-  if (error?.stack) {
-    const prefixed = error.stack
+  if (error instanceof Error) {
+    const prefixed = (error.stack ?? "Stacktrace not available")
       .split("\n")
       .map(
         (line) =>
-          `${getDateString()} ${chalk.yellow("debug")} ${line}`,
+          `${getDateString()} ${formatString(chalk.yellow("debug"))}${line}`,
       );
     console.error(prefixed.join("\n"));
   }

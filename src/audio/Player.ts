@@ -149,7 +149,9 @@ export default class Player {
     this._audioResource = null;
 
     if (clientData.config.cookie) {
-      setToken({ youtube: { cookie: clientData.config.cookie } });
+      void setToken({
+        youtube: { cookie: clientData.config.cookie },
+      });
     }
   }
 
@@ -157,40 +159,46 @@ export default class Player {
   private _ignore() {}
 
   private _handelYoutubeErr(
-    error: any,
+    error: unknown,
     interaction: ChatInputCommandInteraction | undefined,
   ) {
     const errorEmbed: EmbedBuilder = new EmbedBuilder().setColor(
       colors.danger,
     );
-    if (error.message.includes("confirm your age")) {
+    let errorMessage = "Unknown error";
+    if (error instanceof Error) errorMessage = error.message;
+    if (errorMessage.includes("confirm your age")) {
       errorEmbed.setTitle("😱 This video requires login");
-    } else if (error.message.includes("429")) {
+    } else if (errorMessage.includes("429")) {
       errorEmbed.setTitle("😱 I got rate limited by YouTube!");
-    } else if (error.message.includes("private")) {
+    } else if (errorMessage.includes("private")) {
       errorEmbed.setTitle("😱 This video is private");
     } else if (
-      error.message.includes("This is not a YouTube Watch URL")
+      errorMessage.includes("This is not a YouTube Watch URL")
     ) {
       errorEmbed.setTitle("😱 YouTube video link is invalid");
-    } else if (error.message.includes("This is not a Playlist URL")) {
+    } else if (errorMessage.includes("This is not a Playlist URL")) {
       errorEmbed.setTitle("😱 YouTube playlist link is invalid");
     } else {
       errorEmbed.setTitle("😱 Something went wrong!");
     }
-    logger.error(error.message, "player", error);
+    logger.error(errorMessage, "player", error);
     if (interaction)
-      this._reply(interaction, { embeds: [errorEmbed] });
-    else this._textChannel?.send({ embeds: [errorEmbed] });
+      this._reply(interaction, { embeds: [errorEmbed] }).catch(() =>
+        this._ignore(),
+      );
+    else
+      this._textChannel
+        ?.send({ embeds: [errorEmbed] })
+        .catch(() => this._ignore());
   }
 
   private _reply(
     interaction: ChatInputCommandInteraction | ButtonInteraction,
     payload: string | MessagePayload | InteractionReplyOptions,
   ) {
-    if (interaction.replied)
-      return interaction.followUp(payload).catch(this._ignore);
-    else return interaction.reply(payload).catch(this._ignore);
+    if (interaction.replied) return interaction.followUp(payload);
+    else return interaction.reply(payload);
   }
 
   get status(): StatusData {
@@ -203,7 +211,7 @@ export default class Player {
     };
   }
 
-  async init() {
+  init() {
     if (this._init) return;
 
     try {
@@ -213,16 +221,18 @@ export default class Player {
         adapterCreator: this._guild.voiceAdapterCreator,
       });
     } catch (error: any) {
-      logger.error(error.message, "playerinit", error);
+      let errorMessage = "Unknown Error";
+      if (error instanceof Error) errorMessage = error.message;
+      logger.error(errorMessage, "playerinit", error);
       const joinVCEmbed = new EmbedBuilder()
         .setColor(colors.danger)
         .setTitle(
           "❌ Something went wrong when joining Voice Channel",
         )
-        .setDescription("```" + error.message + "```");
+        .setDescription("```" + errorMessage + "```");
       this._textChannel
         ?.send({ embeds: [joinVCEmbed] })
-        .catch(this._ignore);
+        .catch(() => this._ignore());
     }
 
     this._audioPlayer = createAudioPlayer({
@@ -234,56 +244,36 @@ export default class Player {
 
     this._connection.on(VoiceConnectionStatus.Ready, () => {
       logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel}`,
+        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
         "ready",
       );
     });
-    this._connection.on(
-      VoiceConnectionStatus.Disconnected,
-      async () => {
+    this._connection.on(VoiceConnectionStatus.Disconnected, () => {
+      logger.warn(
+        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
+        "disconnected",
+      );
+
+      this._handelReconnect().catch(async () => {
         logger.warn(
-          `Player ${this._guildId} in channel ${this._voiceChannnel}`,
-          "disconnected",
+          `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
+          "left",
         );
-        try {
-          await Promise.race([
-            entersState(
-              this._connection,
-              VoiceConnectionStatus.Signalling,
-              5_000,
-            ),
-            entersState(
-              this._connection,
-              VoiceConnectionStatus.Connecting,
-              5_000,
-            ),
-          ]);
-
-          logger.info(
-            `Player ${this._guildId} in channel ${this._voiceChannnel}`,
-            "reconnected",
+        const leftEmbed = new EmbedBuilder()
+          .setColor(colors.danger)
+          .setTitle("😮 I can't reconnect to Voice Channel")
+          .setDescription(
+            "Looks like you've disconnected me from Voice Channel.",
           );
-        } catch (error: any) {
-          logger.warn(
-            `Player ${this._guildId} in channel ${this._voiceChannnel}`,
-            "left",
-          );
-          const leftEmbed = new EmbedBuilder()
-            .setColor(colors.danger)
-            .setTitle("😮 I can't reconnect to Voice Channel")
-            .setDescription(
-              "Looks like you've disconnected me from Voice Channel.",
-            );
-          this._textChannel
-            ?.send({
-              embeds: [leftEmbed],
-            })
-            .catch(this._ignore);
-        }
-      },
-    );
+        await this._textChannel
+          ?.send({
+            embeds: [leftEmbed],
+          })
+          .catch();
+      });
+    });
 
-    this._audioPlayer.on(AudioPlayerStatus.Playing, () =>
+    this._audioPlayer.on(AudioPlayerStatus.Playing, (): void =>
       logger.info(
         `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
         "playing",
@@ -301,15 +291,35 @@ export default class Player {
         "idle",
       );
 
-      this.startStream(0);
+      void this.startStream(0);
     });
 
     this._init = true;
     this._clientData.players.set(this._guildId, this);
 
     if (this._voiceChannnel instanceof StageChannel) {
-      await this._setSpeaker();
+      void this._setSpeaker();
     }
+  }
+
+  private async _handelReconnect() {
+    await Promise.race([
+      entersState(
+        this._connection,
+        VoiceConnectionStatus.Signalling,
+        5_000,
+      ),
+      entersState(
+        this._connection,
+        VoiceConnectionStatus.Connecting,
+        5_000,
+      ),
+    ]);
+
+    logger.info(
+      `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
+      "reconnected",
+    );
   }
 
   private async _setSpeaker() {
@@ -333,7 +343,7 @@ export default class Player {
         );
       this._textChannel
         ?.send({ embeds: [stageEmbed] })
-        .catch(this._ignore);
+        .catch(() => this._ignore());
     }
   }
 
@@ -369,7 +379,7 @@ export default class Player {
     this._reply(interaction, {
       embeds: [skipPersonalEmbed],
       ephemeral: true,
-    });
+    }).catch(() => this._ignore());
 
     const previousEmbed = new EmbedBuilder()
       .setTitle("⏭️ Playing previous song")
@@ -385,10 +395,10 @@ export default class Player {
       ?.send({
         embeds: [previousEmbed],
       })
-      .catch(this._ignore);
+      .catch(() => this._ignore());
 
     this._songs.push(this._playedSong[0]);
-    this.startStream(0);
+    void this.startStream(0);
   }
 
   skip(interaction: ChatInputCommandInteraction | ButtonInteraction) {
@@ -398,7 +408,7 @@ export default class Player {
     this._reply(interaction, {
       embeds: [skipPersonalEmbed],
       ephemeral: true,
-    });
+    }).catch(() => this._ignore());
 
     const skippedEmbed = new EmbedBuilder()
       .setTitle("⏭️ Song skipped")
@@ -414,9 +424,9 @@ export default class Player {
       ?.send({
         embeds: [skippedEmbed],
       })
-      .catch(this._ignore);
+      .catch(() => this._ignore());
 
-    this.startStream(0);
+    void this.startStream(0);
   }
 
   repeat(
@@ -443,7 +453,7 @@ export default class Player {
     this._reply(interaction, {
       embeds: [repeatPersonalEmbed],
       ephemeral: true,
-    });
+    }).catch(() => this._ignore());
 
     const repeatEmbed = new EmbedBuilder()
       .setTitle("🔁 Current repeat mode changed")
@@ -457,7 +467,7 @@ export default class Player {
       ?.send({
         embeds: [repeatEmbed],
       })
-      .catch(this._ignore);
+      .catch(() => this._ignore());
     this._repeat = repeatState;
   }
 
@@ -470,7 +480,7 @@ export default class Player {
     this._reply(interaction, {
       embeds: [pausePersonalEmbed],
       ephemeral: true,
-    });
+    }).catch(() => this._ignore());
 
     const pauseEmbed = new EmbedBuilder()
       .setTitle("⏸️ Paused corrent song")
@@ -483,7 +493,7 @@ export default class Player {
       ?.send({
         embeds: [pauseEmbed],
       })
-      .catch(this._ignore);
+      .catch(() => this._ignore());
     this._paused = true;
     this._audioPlayer.pause(true);
   }
@@ -497,7 +507,7 @@ export default class Player {
     this._reply(interaction, {
       embeds: [resumePersonalEmbed],
       ephemeral: true,
-    });
+    }).catch(() => this._ignore());
 
     const resumeEmbed = new EmbedBuilder()
       .setTitle("▶️ Resume corrent song")
@@ -510,7 +520,7 @@ export default class Player {
       ?.send({
         embeds: [resumeEmbed],
       })
-      .catch(this._ignore);
+      .catch(() => this._ignore());
     this._paused = false;
     this._audioPlayer.unpause();
   }
@@ -531,14 +541,16 @@ export default class Player {
           .setDescription(`Query: ${query}`)
           .setColor(colors.danger);
         interaction;
-        this._reply(interaction, { embeds: [noVidEmbed] });
+        this._reply(interaction, { embeds: [noVidEmbed] }).catch(() =>
+          this._ignore(),
+        );
         return;
       }
 
       const video = await video_info(result[0].url);
       song = this.parseData(video.video_details, interaction.user);
       this._songs.push(song);
-      this.startStream(1, interaction);
+      void this.startStream(1, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -585,17 +597,19 @@ export default class Player {
           .setTitle("❌ Action canceled")
           .setColor(colors.danger)
           .setDescription("You didn't reply within 10 seconds.");
-        this._reply(interaction, { embeds: [ignoredEmbed] });
+        this._reply(interaction, { embeds: [ignoredEmbed] }).catch(
+          () => this._ignore(),
+        );
       }
 
-      collected?.deferUpdate().catch(this._ignore);
-      replied.delete().catch(this._ignore);
+      collected?.deferUpdate().catch(() => this._ignore());
+      replied.delete().catch(() => this._ignore());
       if (collected?.customId === "v") {
-        this.loadVideo(url, interaction);
+        await this.loadVideo(url, interaction);
       } else {
         const params = new URL(url).searchParams;
         //@ts-expect-error
-        this.loadPlaylist(params.get("list"), interaction);
+        await this.loadPlaylist(params.get("list"), interaction);
       }
     }
   }
@@ -609,7 +623,7 @@ export default class Player {
       const video = await video_info(id);
       song = this.parseData(video.video_details, interaction.user);
       this._songs.push(song);
-      this.startStream(1, interaction);
+      void this.startStream(1, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -625,7 +639,7 @@ export default class Player {
       videos.forEach((i) => {
         this._songs.push(this.parseData(i, interaction.user));
       });
-      this.startStream(videos.length, interaction);
+      void this.startStream(videos.length, interaction);
     } catch (error: any) {
       this._handelYoutubeErr(error, interaction);
     }
@@ -662,9 +676,9 @@ export default class Player {
           `Added \`${addedCount}\` songs to queue`,
         );
       }
-      // Ignore if there is no interaction as its not possible
+      // Ignore if there is no interaction as its not possible to reply
       if (interaction)
-        this._reply(interaction, { embeds: [addedEmbed] });
+        await this._reply(interaction, { embeds: [addedEmbed] });
       return;
     }
     const readyEmbed = new EmbedBuilder()
@@ -748,7 +762,7 @@ export default class Player {
       .setTitle("🎶 Start playing music")
       .setDescription(
         `**${
-          this._audioResource.metadata.name || "Unknown Track"
+          this._audioResource.metadata.name ?? "Unknown Track"
         }**\n` +
           `[${secondsToDuration(
             this._audioResource.playbackDuration / 1000,
@@ -817,7 +831,8 @@ export default class Player {
             })
             .on("collect", (i) => this.buttonHandle(i));
         }
-      });
+      })
+      .catch(() => this._ignore());
     //.catch(this._ignore);
     if (this._updateInterval && !recallInterval) {
       this._updateInterval = setInterval(() => {
@@ -831,7 +846,7 @@ export default class Player {
   private buttonHandle(interaction: ButtonInteraction) {
     switch (interaction.customId) {
       case "back":
-        this.previous(interaction);
+        void this.previous(interaction);
         break;
       case "play":
         if (this._paused) {
@@ -841,7 +856,7 @@ export default class Player {
         }
         break;
       case "next":
-        this.skip(interaction);
+        void this.skip(interaction);
         break;
 
       default:

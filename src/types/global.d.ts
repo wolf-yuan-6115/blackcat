@@ -47,7 +47,7 @@ declare global {
     ): void;
   }
 
-  interface BotEvent<T extends keyof ClientEvents> {
+  interface BotEvent<T extends keyof ClientEvents = "ready"> {
     event: keyof ClientEvents;
     once: boolean;
     run(
@@ -68,5 +68,9 @@ declare global {
   interface Driver {
     name: string;
     ready(clientData: ClientData);
+  }
+
+  interface ModuleType<T> {
+    default: T;
   }
 }

@@ -1,11 +1,11 @@
+import Player from "../audio/Player.js";
+import colors from "../utils/colors.js";
 import {
   type ChatInputCommandInteraction,
   GuildMember,
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";
-import Player from "../audio/Player.js";
-import colors from "../utils/colors.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -26,19 +26,18 @@ export default {
           .setTitle("❌ You aren't in a voice channel")
           .setDescription("Join a voice channel first!")
           .setColor(colors.danger);
-        return (
-          interaction
-            .reply({ embeds: [noChannelEmbed] })
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            .catch(() => {})
-        );
+        interaction
+          .reply({ embeds: [noChannelEmbed] })
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          .catch(() => {});
+        return;
       }
     }
 
     if (!clientData.players.get(interaction.guildId ?? "")) {
       const player = new Player(clientData, interaction);
       player.init();
-      player.play(
+      void player.play(
         interaction.options.getString("video", true),
         interaction,
       );
@@ -57,7 +56,7 @@ export default {
           .catch(() => {});
       }
 
-      clientData.players
+      void clientData.players
         .get(interaction.guildId ?? "")
         ?.play(
           interaction.options.getString("video", true),

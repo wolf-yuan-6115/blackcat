@@ -1,8 +1,8 @@
-import Discord from "discord.js";
-import fs from "node:fs";
-import { ClusterClient, getInfo } from "discord-hybrid-sharding";
 import configGrabber from "./utils/configGrabber.js";
 import logger from "./utils/logger.js";
+import { ClusterClient, getInfo } from "discord-hybrid-sharding";
+import Discord from "discord.js";
+import fs from "node:fs";
 
 const client = new Discord.Client({
   intents: [
@@ -39,26 +39,38 @@ if (clientData.config.debug) {
 const commandFiles: string[] = fs
   .readdirSync("./dist/commands")
   .filter((file) => file.endsWith(".js"));
-commandFiles.forEach(async (location: string) => {
-  const command = (await import(`./commands/${location}`)).default;
-  clientData.commands.set(command.data.name, command);
-});
+
+await Promise.all(
+  commandFiles.map(async (location: string) => {
+    const command = (
+      (await import(
+        `./commands/${location}`
+      )) as ModuleType<BotCommand>
+    ).default;
+    clientData.commands.set(command.data.name, command);
+  }),
+);
 
 const eventFiles: string[] = fs
   .readdirSync("./dist/events")
   .filter((file) => file.endsWith(".js"));
-eventFiles.forEach(async (location: string) => {
-  const event = (await import(`./events/${location}`)).default;
+await Promise.all(
+  eventFiles.map(async (location: string) => {
+    const event = (
+      (await import(`./events/${location}`)) as ModuleType<BotEvent>
+    ).default;
+    if (event.once) {
+      client.once(event.event, (...args: unknown[]) =>
+        // @ts-expect-error args will be passed into unknown function
+        event.run(client, clientData, ...args),
+      );
+    } else {
+      client.on(event.event, (...args: unknown[]) =>
+        // @ts-expect-error args will be passed into unknown function
+        event.run(client, clientData, ...args),
+      );
+    }
+  }),
+);
 
-  if (event.once) {
-    client.once(event.event, (...args: unknown[]) =>
-      event.run(client, clientData, ...args),
-    );
-  } else {
-    client.on(event.event, (...args: unknown[]) =>
-      event.run(client, clientData, ...args),
-    );
-  }
-});
-
-client.login(clientData.config.token);
+void client.login(clientData.config.token);

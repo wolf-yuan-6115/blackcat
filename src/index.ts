@@ -1,10 +1,9 @@
+import configGrabber from "./utils/configGrabber.js";
+import logger from "./utils/logger.js";
 import {
   ClusterManager,
   type Cluster,
 } from "discord-hybrid-sharding";
-import configGrabber from "./utils/configGrabber.js";
-
-import logger from "./utils/logger.js";
 
 const config: void | Config = configGrabber();
 
@@ -26,4 +25,4 @@ manager.on("clusterCreate", (cluster: Cluster) => {
   logger.info(`Created cluster ${cluster.id}`, "main thread");
 });
 
-manager.spawn();
+void manager.spawn();

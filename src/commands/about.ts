@@ -28,8 +28,10 @@ export default {
           value: `Discord.js version: v${version} Node.js: ${process.version}`,
         },
       ]);
-    interaction.reply({
-      embeds: [embed],
-    });
+    interaction
+      .reply({
+        embeds: [embed],
+      }) // eslint-disable-next-line @typescript-eslint/no-empty-function
+      .catch(() => {});
   },
 } satisfies BotCommand;

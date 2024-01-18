@@ -20,12 +20,10 @@ export default {
         .setDescription("Use `/play` to play some music")
         .setColor(colors.danger);
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      return (
-        interaction
-          .reply({ embeds: [noPlayerEmbed] })
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          .catch(() => {})
-      );
+      interaction
+        .reply({ embeds: [noPlayerEmbed] })
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        .catch(() => {});
     } else {
       if (
         interaction.guild?.members.me?.voice.channelId !==

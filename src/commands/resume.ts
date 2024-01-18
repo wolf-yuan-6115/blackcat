@@ -19,13 +19,11 @@ export default {
         .setTitle("❌ Nothing is playing now")
         .setDescription("Use `/play` to play some music")
         .setColor(colors.danger);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      return (
-        interaction
-          .reply({ embeds: [noPlayerEmbed] })
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          .catch(() => {})
-      );
+      interaction
+        .reply({ embeds: [noPlayerEmbed] })
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        .catch(() => {});
+      return;
     } else {
       if (
         interaction.guild?.members.me?.voice.channelId !==

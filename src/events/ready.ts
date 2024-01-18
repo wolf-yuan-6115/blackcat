@@ -4,7 +4,7 @@ import { ActivityType } from "discord.js";
 export default {
   event: "ready",
   once: false,
-  async run(client, clientData) {
+  run(client, clientData) {
     logger.info(`${client.user?.username} is ready now`, "postready");
     const commands = clientData.commands.map((e) => e.data);
 
@@ -16,9 +16,11 @@ export default {
           "postready",
         );
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
+        let errorMessage = "Unknown message";
+        if (error instanceof Error) errorMessage = error.message;
         logger.error(
-          `Error when posting commands to Discord: ${error.message}`,
+          `Error when posting commands to Discord: ${errorMessage}`,
           "postready",
           error,
         );

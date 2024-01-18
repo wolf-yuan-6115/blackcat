@@ -96,10 +96,7 @@ export default class Player {
   _youtubeStream: YouTubeStream | SoundCloudStream;
   _audioResource: AudioResource<SongInfo>;
 
-  constructor(
-    clientData: ClientData,
-    interaction: ChatInputCommandInteraction,
-  ) {
+  constructor(clientData: ClientData, interaction: ChatInputCommandInteraction) {
     this._client = interaction.client;
     this._clientData = clientData;
     this._disableEffect = clientData.config.optimize;
@@ -158,13 +155,8 @@ export default class Player {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private _ignore() {}
 
-  private _handelYoutubeErr(
-    error: unknown,
-    interaction: ChatInputCommandInteraction | undefined,
-  ) {
-    const errorEmbed: EmbedBuilder = new EmbedBuilder().setColor(
-      colors.danger,
-    );
+  private _handelYoutubeErr(error: unknown, interaction: ChatInputCommandInteraction | undefined) {
+    const errorEmbed: EmbedBuilder = new EmbedBuilder().setColor(colors.danger);
     let errorMessage = "Unknown error";
     if (error instanceof Error) errorMessage = error.message;
     if (errorMessage.includes("confirm your age")) {
@@ -173,9 +165,7 @@ export default class Player {
       errorEmbed.setTitle("😱 I got rate limited by YouTube!");
     } else if (errorMessage.includes("private")) {
       errorEmbed.setTitle("😱 This video is private");
-    } else if (
-      errorMessage.includes("This is not a YouTube Watch URL")
-    ) {
+    } else if (errorMessage.includes("This is not a YouTube Watch URL")) {
       errorEmbed.setTitle("😱 YouTube video link is invalid");
     } else if (errorMessage.includes("This is not a Playlist URL")) {
       errorEmbed.setTitle("😱 YouTube playlist link is invalid");
@@ -183,14 +173,8 @@ export default class Player {
       errorEmbed.setTitle("😱 Something went wrong!");
     }
     logger.error(errorMessage, "player", error);
-    if (interaction)
-      this._reply(interaction, { embeds: [errorEmbed] }).catch(() =>
-        this._ignore(),
-      );
-    else
-      this._textChannel
-        ?.send({ embeds: [errorEmbed] })
-        .catch(() => this._ignore());
+    if (interaction) this._reply(interaction, { embeds: [errorEmbed] }).catch(() => this._ignore());
+    else this._textChannel?.send({ embeds: [errorEmbed] }).catch(() => this._ignore());
   }
 
   private _reply(
@@ -226,13 +210,9 @@ export default class Player {
       logger.error(errorMessage, "playerinit", error);
       const joinVCEmbed = new EmbedBuilder()
         .setColor(colors.danger)
-        .setTitle(
-          "❌ Something went wrong when joining Voice Channel",
-        )
+        .setTitle("❌ Something went wrong when joining Voice Channel")
         .setDescription("```" + errorMessage + "```");
-      this._textChannel
-        ?.send({ embeds: [joinVCEmbed] })
-        .catch(() => this._ignore());
+      this._textChannel?.send({ embeds: [joinVCEmbed] }).catch(() => this._ignore());
     }
 
     this._audioPlayer = createAudioPlayer({
@@ -243,28 +223,17 @@ export default class Player {
     this._connection.subscribe(this._audioPlayer);
 
     this._connection.on(VoiceConnectionStatus.Ready, () => {
-      logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-        "ready",
-      );
+      logger.info(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "ready");
     });
     this._connection.on(VoiceConnectionStatus.Disconnected, () => {
-      logger.warn(
-        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-        "disconnected",
-      );
+      logger.warn(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "disconnected");
 
       this._handelReconnect().catch(async () => {
-        logger.warn(
-          `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-          "left",
-        );
+        logger.warn(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "left");
         const leftEmbed = new EmbedBuilder()
           .setColor(colors.danger)
           .setTitle("😮 I can't reconnect to Voice Channel")
-          .setDescription(
-            "Looks like you've disconnected me from Voice Channel.",
-          );
+          .setDescription("Looks like you've disconnected me from Voice Channel.");
         await this._textChannel
           ?.send({
             embeds: [leftEmbed],
@@ -274,22 +243,13 @@ export default class Player {
     });
 
     this._audioPlayer.on(AudioPlayerStatus.Playing, (): void =>
-      logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-        "playing",
-      ),
+      logger.info(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "playing"),
     );
     this._audioPlayer.on(AudioPlayerStatus.Buffering, () =>
-      logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-        "buffering",
-      ),
+      logger.info(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "buffering"),
     );
     this._audioPlayer.on(AudioPlayerStatus.Idle, () => {
-      logger.info(
-        `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-        "idle",
-      );
+      logger.info(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "idle");
 
       void this.startStream(0);
     });
@@ -304,31 +264,16 @@ export default class Player {
 
   private async _handelReconnect() {
     await Promise.race([
-      entersState(
-        this._connection,
-        VoiceConnectionStatus.Signalling,
-        5_000,
-      ),
-      entersState(
-        this._connection,
-        VoiceConnectionStatus.Connecting,
-        5_000,
-      ),
+      entersState(this._connection, VoiceConnectionStatus.Signalling, 5_000),
+      entersState(this._connection, VoiceConnectionStatus.Connecting, 5_000),
     ]);
 
-    logger.info(
-      `Player ${this._guildId} in channel ${this._voiceChannnel.id}`,
-      "reconnected",
-    );
+    logger.info(`Player ${this._guildId} in channel ${this._voiceChannnel.id}`, "reconnected");
   }
 
   private async _setSpeaker() {
     try {
-      await entersState(
-        this._connection,
-        VoiceConnectionStatus.Ready,
-        15_000,
-      );
+      await entersState(this._connection, VoiceConnectionStatus.Ready, 15_000);
     } catch (_error: any) {
       return;
     }
@@ -338,12 +283,8 @@ export default class Player {
       const stageEmbed = new EmbedBuilder()
         .setColor(colors.warning)
         .setTitle("😱 I can't set myself as a stage speaker.")
-        .setDescription(
-          "You might need to set me as the stage speaker manually.",
-        );
-      this._textChannel
-        ?.send({ embeds: [stageEmbed] })
-        .catch(() => this._ignore());
+        .setDescription("You might need to set me as the stage speaker manually.");
+      this._textChannel?.send({ embeds: [stageEmbed] }).catch(() => this._ignore());
     }
   }
 
@@ -359,8 +300,7 @@ export default class Player {
       const params = url.searchParams;
 
       if (params.has("list")) {
-        if (params.has("v"))
-          return this.loadPlaylistWithVideo(song, interaction);
+        if (params.has("v")) return this.loadPlaylistWithVideo(song, interaction);
         else return this.loadPlaylist(song, interaction);
       }
 
@@ -370,9 +310,7 @@ export default class Player {
     }
   }
 
-  previous(
-    interaction: ChatInputCommandInteraction | ButtonInteraction,
-  ) {
+  previous(interaction: ChatInputCommandInteraction | ButtonInteraction) {
     const skipPersonalEmbed = new EmbedBuilder()
       .setTitle("⏭️ Playing previous song")
       .setColor(colors.success);
@@ -412,9 +350,7 @@ export default class Player {
 
     const skippedEmbed = new EmbedBuilder()
       .setTitle("⏭️ Song skipped")
-      .setDescription(
-        `Skipped current song \`${this._audioResource.metadata.name}\``,
-      )
+      .setDescription(`Skipped current song \`${this._audioResource.metadata.name}\``)
       .setColor(colors.success)
       .setAuthor({
         name: interaction.user.username,
@@ -429,10 +365,7 @@ export default class Player {
     void this.startStream(0);
   }
 
-  repeat(
-    interaction: ChatInputCommandInteraction | ButtonInteraction,
-    repeatState: RepeatState,
-  ) {
+  repeat(interaction: ChatInputCommandInteraction | ButtonInteraction, repeatState: RepeatState) {
     let humanState;
     switch (repeatState) {
       case RepeatState.All:
@@ -471,9 +404,7 @@ export default class Player {
     this._repeat = repeatState;
   }
 
-  pause(
-    interaction: ChatInputCommandInteraction | ButtonInteraction,
-  ) {
+  pause(interaction: ChatInputCommandInteraction | ButtonInteraction) {
     const pausePersonalEmbed = new EmbedBuilder()
       .setTitle("⏸️ Paused corrent song")
       .setColor(colors.success);
@@ -498,9 +429,7 @@ export default class Player {
     this._audioPlayer.pause(true);
   }
 
-  resume(
-    interaction: ChatInputCommandInteraction | ButtonInteraction,
-  ) {
+  resume(interaction: ChatInputCommandInteraction | ButtonInteraction) {
     const resumePersonalEmbed = new EmbedBuilder()
       .setTitle("▶️ Resume corrent song")
       .setColor(colors.success);
@@ -525,10 +454,7 @@ export default class Player {
     this._audioPlayer.unpause();
   }
 
-  private async loadSearch(
-    query: string,
-    interaction: ChatInputCommandInteraction,
-  ) {
+  private async loadSearch(query: string, interaction: ChatInputCommandInteraction) {
     let song: SongInfo;
     try {
       const result = await search(query, {
@@ -541,9 +467,7 @@ export default class Player {
           .setDescription(`Query: ${query}`)
           .setColor(colors.danger);
         interaction;
-        this._reply(interaction, { embeds: [noVidEmbed] }).catch(() =>
-          this._ignore(),
-        );
+        this._reply(interaction, { embeds: [noVidEmbed] }).catch(() => this._ignore());
         return;
       }
 
@@ -556,10 +480,7 @@ export default class Player {
     }
   }
 
-  private async loadPlaylistWithVideo(
-    url: string,
-    interaction: ChatInputCommandInteraction,
-  ) {
+  private async loadPlaylistWithVideo(url: string, interaction: ChatInputCommandInteraction) {
     const chooseEmbed = new EmbedBuilder()
       .setTitle("🤔 Your link includes video and playlist")
       .setDescription("Which one do you want to add?");
@@ -573,11 +494,7 @@ export default class Player {
       .setLabel("Whole Playlist")
       .setEmoji("🧾")
       .setStyle(ButtonStyle.Success);
-    const actionRow =
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        vidBtn,
-        plBtn,
-      );
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(vidBtn, plBtn);
 
     const replied = await this._reply(interaction, {
       embeds: [chooseEmbed],
@@ -597,9 +514,7 @@ export default class Player {
           .setTitle("❌ Action canceled")
           .setColor(colors.danger)
           .setDescription("You didn't reply within 10 seconds.");
-        this._reply(interaction, { embeds: [ignoredEmbed] }).catch(
-          () => this._ignore(),
-        );
+        this._reply(interaction, { embeds: [ignoredEmbed] }).catch(() => this._ignore());
       }
 
       collected?.deferUpdate().catch(() => this._ignore());
@@ -614,10 +529,7 @@ export default class Player {
     }
   }
 
-  private async loadVideo(
-    id: string,
-    interaction: ChatInputCommandInteraction,
-  ) {
+  private async loadVideo(id: string, interaction: ChatInputCommandInteraction) {
     let song: SongInfo;
     try {
       const video = await video_info(id);
@@ -629,10 +541,7 @@ export default class Player {
     }
   }
 
-  private async loadPlaylist(
-    id: string,
-    interaction: ChatInputCommandInteraction,
-  ) {
+  private async loadPlaylist(id: string, interaction: ChatInputCommandInteraction) {
     try {
       const playlist = await playlist_info(id);
       const videos = await playlist.all_videos();
@@ -655,37 +564,23 @@ export default class Player {
     };
   }
 
-  private async startStream(
-    addedCount: number,
-    interaction?: ChatInputCommandInteraction,
-  ) {
+  private async startStream(addedCount: number, interaction?: ChatInputCommandInteraction) {
     // No audio is playing currently
     if (this._playing && addedCount !== 0) {
-      const addedEmbed = new EmbedBuilder()
-        .setTitle("✅ Added to queue")
-        .setColor(colors.success);
+      const addedEmbed = new EmbedBuilder().setTitle("✅ Added to queue").setColor(colors.success);
 
       if (addedCount === 1) {
-        addedEmbed.setDescription(
-          `Added \`${
-            this._songs[this._songs.length - 1].name
-          }\` to queue`,
-        );
+        addedEmbed.setDescription(`Added \`${this._songs[this._songs.length - 1].name}\` to queue`);
       } else {
-        addedEmbed.setDescription(
-          `Added \`${addedCount}\` songs to queue`,
-        );
+        addedEmbed.setDescription(`Added \`${addedCount}\` songs to queue`);
       }
       // Ignore if there is no interaction as its not possible to reply
-      if (interaction)
-        await this._reply(interaction, { embeds: [addedEmbed] });
+      if (interaction) await this._reply(interaction, { embeds: [addedEmbed] });
       return;
     }
     const readyEmbed = new EmbedBuilder()
       .setTitle("🔍 Getting ready to play song...")
-      .setDescription(
-        `Song name: \`${this._songs[0].name ?? "unknown track"}\``,
-      )
+      .setDescription(`Song name: \`${this._songs[0].name ?? "unknown track"}\``)
       .setColor(colors.warning);
 
     const followedUp = interaction
@@ -702,13 +597,10 @@ export default class Player {
       return;
     }
 
-    this._audioResource = createAudioResource<SongInfo>(
-      this._youtubeStream.stream,
-      {
-        inputType: this._youtubeStream.type,
-        metadata: this._songs[0],
-      },
-    );
+    this._audioResource = createAudioResource<SongInfo>(this._youtubeStream.stream, {
+      inputType: this._youtubeStream.type,
+      metadata: this._songs[0],
+    });
     this._audioPlayer.play(this._audioResource);
     this._playing = true;
     const current = this._songs.shift();
@@ -729,10 +621,7 @@ export default class Player {
     if (followedUp) this.refreshController(false, followedUp);
   }
 
-  private refreshController(
-    recallInterval: boolean,
-    bootstrap: Message | InteractionResponse,
-  ) {
+  private refreshController(recallInterval: boolean, bootstrap: Message | InteractionResponse) {
     if (bootstrap && !recallInterval) {
       this._controller = bootstrap;
     }
@@ -753,27 +642,19 @@ export default class Player {
         repeatName = "Single";
         break;
     }
-    if (this._effects.Bassboost)
-      effectName = effectName + "Bassboost ";
-    if (this._effects.Nightcore)
-      effectName = effectName + "Nightcore ";
+    if (this._effects.Bassboost) effectName = effectName + "Bassboost ";
+    if (this._effects.Nightcore) effectName = effectName + "Nightcore ";
 
     const controlEmbed = new EmbedBuilder()
       .setTitle("🎶 Start playing music")
       .setDescription(
-        `**${
-          this._audioResource.metadata.name ?? "Unknown Track"
-        }**\n` +
-          `[${secondsToDuration(
-            this._audioResource.playbackDuration / 1000,
-          )}] ` +
+        `**${this._audioResource.metadata.name ?? "Unknown Track"}**\n` +
+          `[${secondsToDuration(this._audioResource.playbackDuration / 1000)}] ` +
           `${createProgressBar(
             Math.round(this._audioResource.playbackDuration / 1000),
             this._audioResource.metadata.duration,
           )} ` +
-          `[${secondsToDuration(
-            this._audioResource.metadata.duration,
-          )}]`,
+          `[${secondsToDuration(this._audioResource.metadata.duration)}]`,
       )
       .addFields(
         {
@@ -809,13 +690,12 @@ export default class Player {
       .setCustomId("stop")
       .setEmoji("⏹️")
       .setStyle(ButtonStyle.Danger);
-    const buttons =
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        previousButton,
-        playPauseButton,
-        nextButton,
-        stopButton,
-      );
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      previousButton,
+      playPauseButton,
+      nextButton,
+      stopButton,
+    );
 
     bootstrap
       .edit({

@@ -23,8 +23,7 @@ export default {
         ),
     ) as SlashCommandBuilder,
   run: (interaction: ChatInputCommandInteraction, clientData) => {
-    if (!(interaction.member instanceof GuildMember))
-      throw new Error("Not in a guild");
+    if (!(interaction.member instanceof GuildMember)) throw new Error("Not in a guild");
 
     if (!clientData.players.get(interaction.guildId ?? "")) {
       const noPlayerEmbed = new EmbedBuilder()
@@ -37,10 +36,7 @@ export default {
         .catch(() => {});
       return;
     } else {
-      if (
-        interaction.guild?.members.me?.voice.channelId !==
-        interaction.member.voice.channelId
-      ) {
+      if (interaction.guild?.members.me?.voice.channelId !== interaction.member.voice.channelId) {
         const differentEmbed = new EmbedBuilder()
           .setTitle("❌ Please join my channel")
           .setDescription("I'm already in another voice channel")
@@ -51,10 +47,7 @@ export default {
           .catch(() => {});
       }
 
-      const repeatState = interaction.options.getString(
-        "state",
-        true,
-      );
+      const repeatState = interaction.options.getString("state", true);
       let parsedState: RepeatState;
       switch (repeatState) {
         case "all":
@@ -70,9 +63,7 @@ export default {
           parsedState = RepeatState.Off;
           break;
       }
-      clientData.players
-        .get(interaction.guildId ?? "")
-        ?.repeat(interaction, parsedState);
+      clientData.players.get(interaction.guildId ?? "")?.repeat(interaction, parsedState);
     }
   },
 } satisfies BotCommand;

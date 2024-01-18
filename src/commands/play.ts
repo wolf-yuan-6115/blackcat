@@ -12,10 +12,7 @@ export default {
     .setName("play")
     .setDescription("Play a song")
     .addStringOption((option) =>
-      option
-        .setName("video")
-        .setDescription("YouTube link or search query")
-        .setRequired(true),
+      option.setName("video").setDescription("YouTube link or search query").setRequired(true),
     ) as SlashCommandBuilder,
   run: (interaction: ChatInputCommandInteraction, clientData) => {
     if (!(interaction.member instanceof GuildMember)) {
@@ -37,15 +34,9 @@ export default {
     if (!clientData.players.get(interaction.guildId ?? "")) {
       const player = new Player(clientData, interaction);
       player.init();
-      void player.play(
-        interaction.options.getString("video", true),
-        interaction,
-      );
+      void player.play(interaction.options.getString("video", true), interaction);
     } else {
-      if (
-        interaction.guild?.members.me?.voice.channelId !==
-        interaction.member.voice.channelId
-      ) {
+      if (interaction.guild?.members.me?.voice.channelId !== interaction.member.voice.channelId) {
         const differentEmbed = new EmbedBuilder()
           .setTitle("❌ Please join my channel")
           .setDescription("I'm already in another voice channel")
@@ -58,10 +49,7 @@ export default {
 
       void clientData.players
         .get(interaction.guildId ?? "")
-        ?.play(
-          interaction.options.getString("video", true),
-          interaction,
-        );
+        ?.play(interaction.options.getString("video", true), interaction);
     }
   },
 } satisfies BotCommand;

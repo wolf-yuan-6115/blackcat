@@ -1,9 +1,6 @@
 import configGrabber from "./utils/configGrabber.js";
 import logger from "./utils/logger.js";
-import {
-  ClusterManager,
-  type Cluster,
-} from "discord-hybrid-sharding";
+import { ClusterManager, type Cluster } from "discord-hybrid-sharding";
 
 const config: void | Config = configGrabber();
 

@@ -1,13 +1,7 @@
-import {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  version,
-} from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, version } from "discord.js";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("about")
-    .setDescription("Get bot information"),
+  data: new SlashCommandBuilder().setName("about").setDescription("Get bot information"),
   run: (interaction) => {
     const upSec = Math.floor(interaction.client.uptime / 1000);
     const upMin = Math.floor(upSec / 60);

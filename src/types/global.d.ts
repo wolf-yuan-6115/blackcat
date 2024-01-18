@@ -41,20 +41,13 @@ declare global {
 
   interface BotCommand {
     data: SlashCommandBuilder;
-    run(
-      interaction: ChatInputCommandInteraction,
-      clientData: ClientData,
-    ): void;
+    run(interaction: ChatInputCommandInteraction, clientData: ClientData): void;
   }
 
   interface BotEvent<T extends keyof ClientEvents = "ready"> {
     event: keyof ClientEvents;
     once: boolean;
-    run(
-      client: Client,
-      clientData: ClientData,
-      ...args: ClientEvents[T]
-    ): void;
+    run(client: Client, clientData: ClientData, ...args: ClientEvents[T]): void;
   }
 
   interface SongInfo {

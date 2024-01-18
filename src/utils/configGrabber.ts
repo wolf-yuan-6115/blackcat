@@ -16,13 +16,9 @@ export default function (): Config {
   if (!existsSync("./config.json")) return config;
 
   try {
-    const parsed: unknown = JSON.parse(
-      readFileSync("./config.json", "utf-8"),
-    );
+    const parsed: unknown = JSON.parse(readFileSync("./config.json", "utf-8"));
     if (!configValidator(parsed))
-      throw new Error(
-        "Config file does not match expected config structure",
-      );
+      throw new Error("Config file does not match expected config structure");
     config = parsed;
   } catch (trace: unknown) {
     error("Configuration error", "Config parser", trace);

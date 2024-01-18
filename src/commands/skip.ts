@@ -1,18 +1,15 @@
+import colors from "../utils/colors.js";
 import {
   type ChatInputCommandInteraction,
   SlashCommandBuilder,
   EmbedBuilder,
   GuildMember,
 } from "discord.js";
-import colors from "../utils/colors.js";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip current song"),
+  data: new SlashCommandBuilder().setName("skip").setDescription("Skip current song"),
   run: (interaction: ChatInputCommandInteraction, clientData) => {
-    if (!(interaction.member instanceof GuildMember))
-      throw new Error("Not in a guild");
+    if (!(interaction.member instanceof GuildMember)) throw new Error("Not in a guild");
 
     if (!clientData.players.get(interaction.guildId ?? "")) {
       const noPlayerEmbed = new EmbedBuilder()
@@ -22,10 +19,7 @@ export default {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       interaction.reply({ embeds: [noPlayerEmbed] }).catch(() => {});
     } else {
-      if (
-        interaction.guild?.members.me?.voice.channelId !==
-        interaction.member.voice.channelId
-      ) {
+      if (interaction.guild?.members.me?.voice.channelId !== interaction.member.voice.channelId) {
         const differentEmbed = new EmbedBuilder()
           .setTitle("❌ Please join my channel")
           .setDescription("I'm already in another voice channel")
@@ -36,9 +30,7 @@ export default {
           .catch(() => {});
       }
 
-      clientData.players
-        .get(interaction.guildId ?? "")
-        ?.skip(interaction);
+      clientData.players.get(interaction.guildId ?? "")?.skip(interaction);
     }
   },
 } satisfies BotCommand;

@@ -25,15 +25,13 @@ export function info(message: string, sender = "unknown"): void {
 
 export function warn(message: string, sender = "unknown"): void {
   console.log(
-    `${getDateString()} ${formatString(chalk.green(sender))}${chalk.yellowBright("warn")} ${message}`,
+    `${getDateString()} ${formatString(chalk.green(sender))}${chalk.yellowBright(
+      "warn",
+    )} ${message}`,
   );
 }
 
-export function error(
-  message: string,
-  sender = "unknown",
-  error?: unknown,
-): void {
+export function error(message: string, sender = "unknown", error?: unknown): void {
   console.error(
     `${getDateString()} ${formatString(chalk.green(sender))}${chalk.red("error")} ${message}`,
   );
@@ -41,10 +39,7 @@ export function error(
   if (error instanceof Error) {
     const prefixed = (error.stack ?? "Stacktrace not available")
       .split("\n")
-      .map(
-        (line) =>
-          `${getDateString()} ${formatString(chalk.yellow("debug"))}${line}`,
-      );
+      .map((line) => `${getDateString()} ${formatString(chalk.yellow("debug"))}${line}`);
     console.error(prefixed.join("\n"));
   }
 }

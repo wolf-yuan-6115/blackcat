@@ -7,12 +7,9 @@ import {
 } from "discord.js";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("resume")
-    .setDescription("Resume current paused music"),
+  data: new SlashCommandBuilder().setName("resume").setDescription("Resume current paused music"),
   run: (interaction: ChatInputCommandInteraction, clientData) => {
-    if (!(interaction.member instanceof GuildMember))
-      throw new Error("Not in a guild");
+    if (!(interaction.member instanceof GuildMember)) throw new Error("Not in a guild");
 
     if (!clientData.players.get(interaction.guildId ?? "")) {
       const noPlayerEmbed = new EmbedBuilder()
@@ -25,10 +22,7 @@ export default {
         .catch(() => {});
       return;
     } else {
-      if (
-        interaction.guild?.members.me?.voice.channelId !==
-        interaction.member.voice.channelId
-      ) {
+      if (interaction.guild?.members.me?.voice.channelId !== interaction.member.voice.channelId) {
         const differentEmbed = new EmbedBuilder()
           .setTitle("❌ Please join my channel")
           .setDescription("I'm already in another voice channel")
@@ -39,9 +33,7 @@ export default {
           .catch(() => {});
       }
 
-      const currentPlayer = clientData.players.get(
-        interaction.guildId ?? "",
-      );
+      const currentPlayer = clientData.players.get(interaction.guildId ?? "");
       if (currentPlayer) {
         if (!currentPlayer.status.paused) {
           const alreadyResumeEmbed = new EmbedBuilder()

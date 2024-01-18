@@ -11,19 +11,12 @@ export default {
     client.application?.commands
       .set(commands)
       ?.then((returnd) => {
-        logger.info(
-          `${returnd.size} command successfully posted`,
-          "postready",
-        );
+        logger.info(`${returnd.size} command successfully posted`, "postready");
       })
       .catch((error: unknown) => {
         let errorMessage = "Unknown message";
         if (error instanceof Error) errorMessage = error.message;
-        logger.error(
-          `Error when posting commands to Discord: ${errorMessage}`,
-          "postready",
-          error,
-        );
+        logger.error(`Error when posting commands to Discord: ${errorMessage}`, "postready", error);
       });
 
     client.user?.setPresence({

@@ -1,12 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
-  "packageRules": [
-    {
-      "groupName": "All Dependencies",
-      "groupSlug": "minor-patch",
-      "matchPackagePatterns": ["*"],
-      "matchUpdateTypes": ["minor", "patch"]
-    }
-  ]
+  "npm": {
+    "minimumReleaseAge": "3 days"
+  }
 }
